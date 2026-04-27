@@ -1,0 +1,155 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using HospitalManagementSystem.BLL;
+
+namespace HospitalManagementSystem.UI
+{
+    public partial class DoctorDashboard : Form
+    {
+        private int _doctorId;
+        private AppointmentService _appointmentService;
+
+        // UI Colors
+        private readonly Color SidebarColor = Color.FromArgb(31, 41, 55);
+        private readonly Color AccentColor = Color.FromArgb(0, 120, 212);
+        private readonly Color HoverColor = Color.FromArgb(55, 65, 81);
+
+        private Label lblStats; // <-- Added field
+
+        public DoctorDashboard(int userId, Label lblStats)
+        {
+            InitializeComponent();
+            _doctorId = userId;
+            _appointmentService = new AppointmentService();
+            ApplyProfessionalTheme();
+            this.lblStats = lblStats;
+        }
+
+        private void ApplyProfessionalTheme()
+        {
+            // Main Form Settings
+            this.Size = new Size(1200, 750);
+            this.BackColor = Color.FromArgb(249, 250, 251);
+            this.Font = new Font("Segoe UI", 10F);
+            this.Text = "CareTech HMS - Doctor Dashboard";
+
+            // 1. Sidebar Panel
+            Panel pnlSidebar = new Panel
+            {
+                Dock = DockStyle.Left,
+                Width = 240,
+                BackColor = SidebarColor
+            };
+
+            Label lblLogo = new Label
+            {
+                Text = "CareTech",
+                Font = new Font("Segoe UI", 18F, FontStyle.Bold),
+                ForeColor = Color.White,
+                Location = new Point(20, 25),
+                AutoSize = true
+            };
+            pnlSidebar.Controls.Add(lblLogo);
+
+            // Create Sidebar Buttons
+            int startY = 100;
+            AddSidebarButton(pnlSidebar, "Dashboard", 0, startY, (s, e) => LoadDashboardHome());
+            AddSidebarButton(pnlSidebar, "My Schedule", 1, startY, btnViewSchedule_Click);
+            AddSidebarButton(pnlSidebar, "Prescriptions", 2, startY, btnWritePrescription_Click);
+            AddSidebarButton(pnlSidebar, "Patient Search", 3, startY, btnSearchPatient_Click);
+
+            // Bottom Logout Button
+            Button btnLogOutRef = AddSidebarButton(pnlSidebar, "Logout", 0, 0, btnLogout_Click);
+            btnLogOutRef.Dock = DockStyle.Bottom;
+            btnLogOutRef.Height = 60;
+
+            // 2. Header Panel
+            Panel pnlHeader = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 80,
+                BackColor = Color.White,
+                Padding = new Padding(20, 0, 20, 0)
+            };
+
+            lblWelcome = new Label
+            {
+                Text = "Welcome, Dr. (ID: " + _doctorId + ")",
+                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+                ForeColor = SidebarColor,
+                Dock = DockStyle.Left,
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoSize = true
+            };
+            pnlHeader.Controls.Add(lblWelcome);
+
+            // 3. Stats Card (Placeholder)
+            Panel pnlContent = new Panel { Dock = DockStyle.Fill, Padding = new Padding(30) };
+
+            Panel cardStats = new Panel
+            {
+                Size = new Size(300, 150),
+                Location = new Point(30, 30),
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            lblStats = new Label
+            {
+                Text = "Loading Appointments...",
+                Font = new Font("Segoe UI Semibold", 11F),
+                Location = new Point(20, 60),
+                AutoSize = true
+            };
+            cardStats.Controls.Add(lblStats);
+            pnlContent.Controls.Add(cardStats);
+
+            this.Controls.Add(pnlContent);
+            this.Controls.Add(pnlHeader);
+            this.Controls.Add(pnlSidebar);
+        }
+
+        private Button AddSidebarButton(Panel parent, string text, int index, int startY, EventHandler clickEvent)
+        {
+            Button btn = new Button
+            {
+                Text = "  " + text,
+                TextAlign = ContentAlignment.MiddleLeft,
+                FlatStyle = FlatStyle.Flat,
+                Height = 55,
+                Width = parent.Width,
+                Location = new Point(0, startY + (index * 55)),
+                ForeColor = Color.FromArgb(209, 213, 219),
+                Font = new Font("Segoe UI Semibold", 10F),
+                Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.FlatAppearance.MouseOverBackColor = HoverColor;
+            btn.Click += clickEvent;
+            parent.Controls.Add(btn);
+            return btn;
+        }
+
+        private void LoadDashboardHome()
+        {
+            var appointments = _appointmentService.GetDoctorSchedule(_doctorId);
+            lblStats.Text = $"Upcoming Appointments\n{appointments.Count}";
+        }
+
+        private void btnLogout_Click(object sender, EventArgs e)
+        {
+            this.Close();
+            new LoginForm().Show();
+        }
+
+        // Original Click Handlers remain the same...
+
+        // Add this method to the DoctorDashboard class to resolve CS0103 for InitializeComponent.
+        // This is a minimal stub. In a real WinForms designer file, this would be auto-generated.
+        private void InitializeComponent()
+        {
+            // No designer components to initialize in this custom UI setup.
+        }
+    }
+}

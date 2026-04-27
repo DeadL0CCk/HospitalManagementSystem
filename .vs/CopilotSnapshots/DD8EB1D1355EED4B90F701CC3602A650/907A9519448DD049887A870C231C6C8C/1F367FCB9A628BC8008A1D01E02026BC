@@ -1,0 +1,160 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using HospitalManagementSystem.BLL;
+
+namespace HospitalManagementSystem.UI
+{
+    public partial class AdminDashboard : Form
+    {
+        private int _userId;
+        private DoctorService _doctorService;
+        private PatientService _patientService;
+        private MedicineService _medicineService;
+        private AppointmentService _appointmentService;
+        private Label lblWelcome;
+
+        // Theme Colors
+        private readonly Color SidebarColor = Color.FromArgb(17, 24, 39); // Midnight Blue-Gray
+        private readonly Color AccentBlue = Color.FromArgb(37, 99, 235);
+        private readonly Color BgLight = Color.FromArgb(243, 244, 246);
+
+        public AdminDashboard(int userId)
+        {
+            InitializeComponent();
+            _userId = userId;
+            _doctorService = new DoctorService();
+            _patientService = new PatientService();
+            _medicineService = new MedicineService();
+            _appointmentService = new AppointmentService();
+            ApplyProfessionalTheme();
+        }
+
+        private void ApplyProfessionalTheme()
+        {
+            // Form Config
+            this.Size = new Size(1280, 800);
+            this.BackColor = BgLight;
+            this.Font = new Font("Segoe UI", 10F);
+            this.Text = "CareTech HMS | Administrative Control Center";
+
+            // 1. Sidebar
+            Panel pnlSidebar = new Panel { Dock = DockStyle.Left, Width = 260, BackColor = SidebarColor };
+
+            Label lblBrand = new Label
+            {
+                Text = "CareTech Admin",
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 16F, FontStyle.Bold),
+                Location = new Point(20, 30),
+                AutoSize = true
+            };
+            pnlSidebar.Controls.Add(lblBrand);
+
+            int btnY = 110;
+            CreateSidebarButton(pnlSidebar, "Doctor Management", btnY, btnManageDoctors_Click);
+            CreateSidebarButton(pnlSidebar, "Patient Registry", btnY + 60, btnManagePatients_Click);
+            CreateSidebarButton(pnlSidebar, "Pharmacy/Inventory", btnY + 120, btnManageMedicine_Click);
+            CreateSidebarButton(pnlSidebar, "Appointment Master", btnY + 180, btnViewAppointments_Click);
+
+            Button btnOut = CreateSidebarButton(pnlSidebar, "System Logout", 0, btnLogout_Click);
+            btnOut.Dock = DockStyle.Bottom;
+            btnOut.Height = 70;
+            btnOut.BackColor = Color.FromArgb(31, 41, 55);
+
+            // 2. Main Workspace
+            Panel pnlMain = new Panel { Dock = DockStyle.Fill, Padding = new Padding(40) };
+
+            lblWelcome = new Label
+            {
+                Text = $"System Overview - Admin ID: {_userId}",
+                Font = new Font("Segoe UI", 20F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(17, 24, 39),
+                Location = new Point(40, 30),
+                AutoSize = true
+            };
+
+            // 3. Metric Cards Row
+            FlowLayoutPanel flowStats = new FlowLayoutPanel
+            {
+                Location = new Point(40, 100),
+                Size = new Size(1000, 200),
+                BackColor = Color.Transparent
+            };
+
+            flowStats.Controls.Add(CreateMetricCard("Total Patients", _patientService.GetTotalPatients().ToString(), Color.Teal));
+            flowStats.Controls.Add(CreateMetricCard("Active Doctors", _doctorService.GetAllDoctors().Count.ToString(), AccentBlue));
+            flowStats.Controls.Add(CreateMetricCard("Pending Appointments", _appointmentService.GetAllAppointments().Count.ToString(), Color.OrangeRed));
+
+            pnlMain.Controls.Add(lblWelcome);
+            pnlMain.Controls.Add(flowStats);
+
+            this.Controls.Add(pnlMain);
+            this.Controls.Add(pnlSidebar);
+        }
+
+        private Button CreateSidebarButton(Panel parent, string text, int y, EventHandler clickEvent)
+        {
+            Button btn = new Button
+            {
+                Text = "   " + text,
+                TextAlign = ContentAlignment.MiddleLeft,
+                FlatStyle = FlatStyle.Flat,
+                Height = 50,
+                Width = parent.Width,
+                Location = new Point(0, y),
+                ForeColor = Color.FromArgb(156, 163, 175),
+                Font = new Font("Segoe UI Semibold", 10F),
+                Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(31, 41, 55);
+            btn.Click += clickEvent;
+            parent.Controls.Add(btn);
+            return btn;
+        }
+
+        private Panel CreateMetricCard(string title, string value, Color accent)
+        {
+            Panel card = new Panel { Size = new Size(240, 120), BackColor = Color.White, Margin = new Padding(0, 0, 20, 0) };
+
+            // Decorative Accent Bar
+            Panel bar = new Panel { Dock = DockStyle.Left, Width = 5, BackColor = accent };
+
+            Label lblTitle = new Label { Text = title.ToUpper(), Font = new Font("Segoe UI Bold", 8F), ForeColor = Color.Gray, Location = new Point(20, 20), AutoSize = true };
+            Label lblVal = new Label { Text = value, Font = new Font("Segoe UI Black", 22F), ForeColor = Color.Black, Location = new Point(18, 45), AutoSize = true };
+
+            card.Controls.AddRange(new Control[] { bar, lblTitle, lblVal });
+            return card;
+        }
+
+        private void btnManageDoctors_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Doctor Management form not yet implemented.", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void btnManagePatients_Click(object sender, EventArgs e)
+        {
+            PatientManagementForm patientForm = new PatientManagementForm();
+            patientForm.ShowDialog();
+        }
+
+        private void btnManageMedicine_Click(object sender, EventArgs e)
+        {
+            MedicineInventoryForm medicineForm = new MedicineInventoryForm();
+            medicineForm.ShowDialog();
+        }
+
+        private void btnViewAppointments_Click(object sender, EventArgs e)
+        {
+            AppointmentBookingForm appointmentForm = new AppointmentBookingForm();
+            appointmentForm.ShowDialog();
+        }
+
+        private void btnLogout_Click(object sender, EventArgs e)
+        {
+            this.Close();
+            new LoginForm().Show();
+        }
+    }
+}

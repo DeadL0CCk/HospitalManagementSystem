@@ -1,0 +1,256 @@
+﻿using System;
+using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using HospitalManagementSystem.BLL;
+
+namespace HospitalManagementSystem.UI
+{
+    public class LoginForm : Form
+    {
+        private AuthenticationService _authService;
+
+        // Controls (declared so programmatic UI references compile)
+        private TextBox txtUserId;
+        private TextBox txtPassword;
+        private ComboBox cmbRole;
+        private Button btnLogin;
+
+        // For Draggable Form without Border
+        [DllImport("user32.DLL", EntryPoint = "ReleaseCapture")]
+        private extern static void ReleaseCapture();
+        [DllImport("user32.DLL", EntryPoint = "SendMessage")]
+        private extern static void SendMessage(IntPtr hWnd, int wMsg, int wParam, int lParam);
+
+        // Color Palette
+        private readonly Color PrimaryBlue = Color.FromArgb(0, 92, 151);
+        private readonly Color BackgroundGray = Color.FromArgb(243, 244, 246);
+        private readonly Color TextDark = Color.FromArgb(31, 41, 55);
+        private readonly Color TextMuted = Color.FromArgb(107, 114, 128);
+
+        public LoginForm()
+        {
+            _authService = new AuthenticationService();
+            ApplyModernDesign();
+        }
+
+        private void ApplyModernDesign()
+        {
+            // Form Setup
+            this.Size = new Size(850, 500);
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.BackColor = Color.White;
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            // 1. Left Branding Panel
+            Panel pnlLeft = new Panel
+            {
+                Dock = DockStyle.Left,
+                Width = 350,
+                BackColor = PrimaryBlue
+            };
+            pnlLeft.MouseDown += Form_MouseDown; // Allow dragging
+
+            Label lblTitle = new Label
+            {
+                Text = "CareTech\nHMS",
+                Font = new Font("Segoe UI", 28F, FontStyle.Bold),
+                ForeColor = Color.White,
+                Location = new Point(40, 140),
+                AutoSize = true
+            };
+
+            Label lblDesc = new Label
+            {
+                Text = "Enterprise Grade\nHospital Management Solution",
+                Font = new Font("Segoe UI", 11F),
+                ForeColor = Color.FromArgb(210, 230, 250),
+                Location = new Point(45, 250),
+                AutoSize = true
+            };
+
+            pnlLeft.Controls.Add(lblTitle);
+            pnlLeft.Controls.Add(lblDesc);
+
+            // 2. Right Control Panel
+            Panel pnlRight = new Panel { Dock = DockStyle.Fill };
+            pnlRight.MouseDown += Form_MouseDown;
+
+            // Close Button
+            Button btnExit = new Button
+            {
+                Text = "✕",
+                Size = new Size(40, 40),
+                Location = new Point(460, 10),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                ForeColor = Color.Gray,
+                Font = new Font("Arial", 12, FontStyle.Bold)
+            };
+            btnExit.FlatAppearance.BorderSize = 0;
+            btnExit.Click += (s, e) => Application.Exit();
+
+            // Header
+            Label lblHeader = new Label
+            {
+                Text = "Welcome Back",
+                Font = new Font("Segoe UI", 22F, FontStyle.Bold),
+                ForeColor = TextDark,
+                Location = new Point(60, 60),
+                AutoSize = true
+            };
+
+            // Inputs
+            SetupInputGroup(pnlRight, "User ID", out txtUserId, 140);
+            SetupInputGroup(pnlRight, "Password", out txtPassword, 210, true);
+
+            // Role Selection
+            Label lblRole = CreateModernLabel("Access Level", 60, 280);
+            cmbRole = new ComboBox
+            {
+                Location = new Point(60, 305),
+                Width = 380,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = BackgroundGray,
+                Font = new Font("Segoe UI", 11F)
+            };
+            cmbRole.Items.AddRange(new string[] { "Admin", "Doctor", "Receptionist" });
+            cmbRole.SelectedIndex = 0;
+
+            // Login Button
+            btnLogin = new Button
+            {
+                Text = "SIGN IN",
+                Location = new Point(60, 370),
+                Size = new Size(380, 50),
+                BackColor = PrimaryBlue,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnLogin.FlatAppearance.BorderSize = 0;
+            btnLogin.Click += BtnLogin_Click;
+
+            // Assembly
+            pnlRight.Controls.Add(btnExit);
+            pnlRight.Controls.Add(lblHeader);
+            pnlRight.Controls.Add(lblRole);
+            pnlRight.Controls.Add(cmbRole);
+            pnlRight.Controls.Add(btnLogin);
+
+            this.Controls.Add(pnlRight);
+            this.Controls.Add(pnlLeft);
+        }
+
+        private void SetupInputGroup(Panel parent, string labelText, out TextBox txt, int yPos, bool isPassword = false)
+        {
+            Label lbl = CreateModernLabel(labelText, 60, yPos);
+            txt = new TextBox
+            {
+                Location = new Point(60, yPos + 25),
+                Width = 380,
+                Font = new Font("Segoe UI", 12F),
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = BackgroundGray
+            };
+            if (isPassword) txt.UseSystemPasswordChar = true;
+
+            parent.Controls.Add(lbl);
+            parent.Controls.Add(txt);
+        }
+
+        private Label CreateModernLabel(string text, int x, int y)
+        {
+            return new Label
+            {
+                Text = text.ToUpper(),
+                Location = new Point(x, y),
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                ForeColor = TextMuted,
+                AutoSize = true
+            };
+        }
+
+        private void Form_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                ReleaseCapture();
+                SendMessage(this.Handle, 0x112, 0xf012, 0);
+            }
+        }
+
+        private void BtnLogin_Click(object sender, EventArgs e)
+        {
+            string userIdText = (txtUserId?.Text ?? string.Empty).Trim();
+            string password = (txtPassword?.Text ?? string.Empty);
+            string role = (cmbRole?.SelectedItem != null) ? cmbRole.SelectedItem.ToString() : string.Empty;
+
+            // Validate Input
+            if (string.IsNullOrEmpty(userIdText) || string.IsNullOrEmpty(password))
+            {
+                MessageBox.Show("Please enter User ID and Password.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(role))
+            {
+                MessageBox.Show("Please select an access level.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Parse User ID
+            if (!int.TryParse(userIdText, out int userId))
+            {
+                MessageBox.Show("User ID must be a valid number.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                // Authenticate User
+                bool isAuthenticated = _authService.AuthenticateUser(userId, password, role);
+
+                if (isAuthenticated)
+                {
+                    MessageBox.Show($"Login successful! Welcome, {role}.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    
+                    // Open appropriate dashboard based on role
+                    Form dashboard = null;
+                    switch (role.ToLower())
+                    {
+                        case "admin":
+                            dashboard = new AdminDashboard(userId);
+                            break;
+                        case "doctor":
+                            dashboard = new DoctorDashboard(userId);
+                            break;
+                        case "receptionist":
+                            dashboard = new ReceptionistDashboard(userId);
+                            break;
+                        default:
+                            MessageBox.Show("Unknown role. Cannot open dashboard.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                    }
+
+                    // Hide login form and show dashboard
+                    this.Hide();
+                    dashboard.Show();
+                    dashboard.FormClosed += (s, args) => this.Close();
+                }
+                else
+                {
+                    MessageBox.Show("Invalid User ID, Password, or Role. Please try again.", "Authentication Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txtPassword.Clear();
+                    txtUserId.Focus();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Login Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+}
