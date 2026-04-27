@@ -1,0 +1,35 @@
+# Build output
+/bin/
+/obj/
+
+# Visual Studio
+/.vs/
+*.suo
+*.user
+*.userprefs
+
+# Database files (only scripts should be versioned)
+*.mdf
+*.ldf
+*.db
+
+# NuGet packages (if using old packages.config)
+/packages/
+
+# IDE settings (JetBrains Rider, etc.)
+/.idea/
+
+# Temporary files
+*.tmp
+*.log
+
+# User-specific files (Windows)
+Thumbs.db
+Desktop.ini
+
+# Connection strings with plain passwords (optional: uncomment to exclude)
+# App.config
+
+# Compiled assemblies
+*.dll
+*.exe
